@@ -1,0 +1,50 @@
+{
+  "name": "@miaoosi/hop",
+  "version": "0.1.0",
+  "description": "An extensible port proxy + request enhancement CLI tool",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "hop": "./dist/bin/hop.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "proxy",
+    "cli",
+    "http-proxy",
+    "development",
+    "port-forwarding",
+    "api-proxy"
+  ],
+  "author": "miaoosi",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "fs-extra": "^11.2.0",
+    "http-proxy": "^1.18.1",
+    "inquirer": "^8.2.6",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/http-proxy": "^1.17.15",
+    "@types/inquirer": "^8.2.10",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
