@@ -12,14 +12,14 @@ export async function removeCommand(): Promise<void> {
     }
 
     const choices = config.proxies.map(proxy => ({
-      name: `${proxy.port} → ${proxy.target}`,
-      value: proxy.port
+      name: `${proxy.name} (port: ${proxy.port} → ${proxy.target})`,
+      value: proxy.name
     }));
 
     const answer = await inquirer.prompt([
       {
         type: 'list',
-        name: 'port',
+        name: 'name',
         message: 'Select proxy to remove:',
         choices
       },
@@ -36,8 +36,8 @@ export async function removeCommand(): Promise<void> {
       return;
     }
 
-    await removeProxy(answer.port);
-    logger.success(`Proxy removed: port ${answer.port}`);
+    await removeProxy(answer.name);
+    logger.success(`Proxy removed: ${answer.name}`);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(error.message);

@@ -3,6 +3,7 @@ import { addCommand } from './commands/add';
 import { listCommand } from './commands/list';
 import { removeCommand } from './commands/remove';
 import { serveCommand } from './commands/serve';
+import { helpCommand } from './commands/help';
 
 const program = new Command();
 
@@ -29,9 +30,14 @@ program
   .action(removeCommand);
 
 program
-  .command('serve')
+  .command('serve [names...]')
   .alias('start')
-  .description('Start the proxy server')
+  .description('Start the proxy server (optionally specify proxy names)')
   .action(serveCommand);
+
+program
+  .command('help')
+  .description('Display detailed help information')
+  .action(helpCommand);
 
 program.parse();

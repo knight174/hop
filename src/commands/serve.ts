@@ -11,7 +11,7 @@ interface ServerInfo {
   server: http.Server;
 }
 
-export async function serveCommand(): Promise<void> {
+export async function serveCommand(proxyNames: string[] = []): Promise<void> {
   const spinner = ora('Loading configuration...').start();
 
   try {
@@ -23,17 +23,39 @@ export async function serveCommand(): Promise<void> {
       return;
     }
 
+    // Filter proxies by names if specified
+    let proxiesToStart = config.proxies;
+    if (proxyNames.length > 0) {
+      proxiesToStart = config.proxies.filter(p => proxyNames.includes(p.name));
+
+      if (proxiesToStart.length === 0) {
+        spinner.stop();
+        logger.error(`No proxies found with names: ${proxyNames.join(', ')}`);
+        process.exit(1);
+      }
+
+      // Check for non-existent proxy names
+      const foundNames = proxiesToStart.map(p => p.name);
+      const notFound = proxyNames.filter(name => !foundNames.includes(name));
+      if (notFound.length > 0) {
+        spinner.stop();
+        logger.error(`Proxy not found: ${notFound.join(', ')}`);
+        logger.info(`Available proxies: ${config.proxies.map(p => p.name).join(', ')}`);
+        process.exit(1);
+      }
+    }
+
     spinner.text = 'Starting proxy servers...';
 
     const servers: ServerInfo[] = [];
-    for (const proxy of config.proxies) {
+    for (const proxy of proxiesToStart) {
       try {
         const server = await startProxy(proxy);
         servers.push({ proxy, server });
       } catch (error) {
         spinner.fail();
         if (error instanceof Error) {
-          logger.error(`Failed to start proxy on port ${proxy.port}: ${error.message}`);
+          logger.error(`Failed to start proxy ${proxy.name} on port ${proxy.port}: ${error.message}`);
         }
         process.exit(1);
       }
@@ -43,7 +65,10 @@ export async function serveCommand(): Promise<void> {
 
     console.log();
     servers.forEach(({ proxy }) => {
-      logger.proxy(proxy.port, proxy.target);
+      const pathsInfo = proxy.paths && proxy.paths.length > 0
+        ? ` (paths: ${proxy.paths.join(', ')})`
+        : '';
+      console.log(chalk.green('✓') + ` Started ${chalk.cyan(proxy.name)} on port ${chalk.yellow(proxy.port)} → ${chalk.blue(proxy.target)}${pathsInfo}`);
     });
     console.log();
 

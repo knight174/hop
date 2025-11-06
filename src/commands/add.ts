@@ -7,6 +7,20 @@ export async function addCommand(): Promise<void> {
   try {
     const answers = await inquirer.prompt([
       {
+        type: 'input',
+        name: 'name',
+        message: 'Proxy name:',
+        validate: (input: string) => {
+          if (!input) {
+            return 'Proxy name is required';
+          }
+          if (!/^[a-zA-Z0-9_-]+$/.test(input)) {
+            return 'Name must contain only letters, numbers, hyphens, and underscores';
+          }
+          return true;
+        }
+      },
+      {
         type: 'number',
         name: 'port',
         message: 'Enter local port:',
@@ -32,6 +46,12 @@ export async function addCommand(): Promise<void> {
             return 'Please enter a valid URL (e.g., https://api.example.com)';
           }
         }
+      },
+      {
+        type: 'input',
+        name: 'paths',
+        message: 'Paths to proxy (comma-separated, leave empty for all):',
+        default: ''
       },
       {
         type: 'confirm',
@@ -80,13 +100,17 @@ export async function addCommand(): Promise<void> {
     }
 
     const proxy: ProxyRule = {
+      name: answers.name,
       port: answers.port,
       target: answers.target,
+      paths: answers.paths
+        ? answers.paths.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0)
+        : undefined,
       headers: Object.keys(headers).length > 0 ? headers : undefined
     };
 
     await addProxy(proxy);
-    logger.success(`Proxy added: ${proxy.port} → ${proxy.target}`);
+    logger.success(`Proxy added: ${proxy.name} (${proxy.port} → ${proxy.target})`);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(error.message);

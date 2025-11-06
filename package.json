@@ -22,7 +22,7 @@
     "port-forwarding",
     "api-proxy"
   ],
-  "author": "miaoosi",
+  "author": "Chaos",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

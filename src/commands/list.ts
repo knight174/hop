@@ -12,18 +12,24 @@ export async function listCommand(): Promise<void> {
     }
 
     const table = new Table({
-      head: ['Port', 'Target', 'Headers'],
-      colWidths: [10, 40, 30]
+      head: ['Name', 'Port', 'Target', 'Paths', 'Headers'],
+      colWidths: [20, 10, 35, 25, 20]
     });
 
     config.proxies.forEach(proxy => {
+      const pathsStr = proxy.paths && proxy.paths.length > 0
+        ? proxy.paths.join(', ')
+        : '(all)';
+
       const headersStr = proxy.headers
         ? Object.keys(proxy.headers).join(', ')
         : '-';
 
       table.push([
+        proxy.name,
         proxy.port.toString(),
         proxy.target,
+        pathsStr,
         headersStr
       ]);
     });

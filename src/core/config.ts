@@ -42,9 +42,15 @@ export async function saveConfig(config: HopConfig): Promise<void> {
 export async function addProxy(proxy: ProxyRule): Promise<void> {
   const config = await loadConfig();
 
+  // Check if name already exists
+  const existingByName = config.proxies.findIndex(p => p.name === proxy.name);
+  if (existingByName !== -1) {
+    throw new Error(`Proxy name "${proxy.name}" is already configured`);
+  }
+
   // Check if port already exists
-  const existingIndex = config.proxies.findIndex(p => p.port === proxy.port);
-  if (existingIndex !== -1) {
+  const existingByPort = config.proxies.findIndex(p => p.port === proxy.port);
+  if (existingByPort !== -1) {
     throw new Error(`Port ${proxy.port} is already configured`);
   }
 
@@ -52,22 +58,30 @@ export async function addProxy(proxy: ProxyRule): Promise<void> {
   await saveConfig(config);
 }
 
-export async function removeProxy(port: number): Promise<void> {
+export async function removeProxy(nameOrPort: string | number): Promise<void> {
   const config = await loadConfig();
   const initialLength = config.proxies.length;
 
-  config.proxies = config.proxies.filter(p => p.port !== port);
+  if (typeof nameOrPort === 'string') {
+    config.proxies = config.proxies.filter(p => p.name !== nameOrPort);
+  } else {
+    config.proxies = config.proxies.filter(p => p.port !== nameOrPort);
+  }
 
   if (config.proxies.length === initialLength) {
-    throw new Error(`No proxy found for port ${port}`);
+    throw new Error(`No proxy found: ${nameOrPort}`);
   }
 
   await saveConfig(config);
 }
 
-export async function getProxy(port: number): Promise<ProxyRule | undefined> {
+export async function getProxy(nameOrPort: string | number): Promise<ProxyRule | undefined> {
   const config = await loadConfig();
-  return config.proxies.find(p => p.port === port);
+  if (typeof nameOrPort === 'string') {
+    return config.proxies.find(p => p.name === nameOrPort);
+  } else {
+    return config.proxies.find(p => p.port === nameOrPort);
+  }
 }
 
 export function getConfigPath(): string {

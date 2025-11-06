@@ -38,6 +38,18 @@ export function createProxyServer(rule: ProxyRule): http.Server {
   });
 
   const server = http.createServer((req, res) => {
+    // Check path matching if paths are configured
+    if (rule.paths && rule.paths.length > 0) {
+      const requestPath = req.url || '/';
+      const matched = rule.paths.some(path => requestPath === path || requestPath.startsWith(path + '/') || requestPath.startsWith(path + '?'));
+
+      if (!matched) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end(`Path not configured for proxy. Allowed paths: ${rule.paths.join(', ')}`);
+        return;
+      }
+    }
+
     proxy.web(req, res);
   });
 
