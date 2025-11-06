@@ -2,15 +2,6 @@ import * as http from 'http';
 import httpProxy from 'http-proxy';
 import { ProxyRule } from '../types';
 import { logger } from './logger';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
-
-function replaceEnvVariables(value: string): string {
-  return value.replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, varName) => {
-    return process.env[varName] || `$${varName}`;
-  });
-}
 
 export function createProxyServer(rule: ProxyRule): http.Server {
   const proxy = httpProxy.createProxyServer({
@@ -19,7 +10,7 @@ export function createProxyServer(rule: ProxyRule): http.Server {
     secure: false
   });
 
-  proxy.on('error', (err: any, req: any, res: any) => {
+  proxy.on('error', (err: any, _req: any, res: any) => {
     logger.error(`Proxy error for port ${rule.port}: ${err.message}`);
     if (res instanceof http.ServerResponse && !res.headersSent) {
       res.writeHead(502, { 'Content-Type': 'text/plain' });
@@ -27,12 +18,11 @@ export function createProxyServer(rule: ProxyRule): http.Server {
     }
   });
 
-  proxy.on('proxyReq', (proxyReq: any, req: any, res: any) => {
+  proxy.on('proxyReq', (proxyReq: any) => {
     // Inject custom headers
     if (rule.headers) {
       Object.entries(rule.headers).forEach(([key, value]) => {
-        const processedValue = replaceEnvVariables(value);
-        proxyReq.setHeader(key, processedValue);
+        proxyReq.setHeader(key, value);
       });
     }
   });

@@ -9,8 +9,7 @@ An extensible port proxy + request enhancement CLI tool for local development.
 - 🔄 **Multiple proxies** - Run multiple proxies simultaneously
 - 🎨 **Interactive CLI** - Beautiful terminal UI with colors and animations
 - 🔐 **Custom headers** - Add authentication headers, cookies, etc.
-- 🌍 **Environment variables** - Dynamic header values from environment
-- 📝 **Simple configuration** - JSON-based config stored in `~/.hop/config.json`
+- 🌍 **Simple configuration** - JSON-based config stored in `~/.hop/config.json`
 
 ## Installation
 
@@ -35,7 +34,7 @@ Follow the interactive prompts to configure your proxy:
 ? Paths to proxy (comma-separated, leave empty for all): /api/users, /api/posts
 ? Add custom headers? Yes
 ? Header name: Authorization
-? Header value: Bearer $TOKEN
+? Header value: Bearer your-api-token
 ? Add another header? No
 ✔ Proxy added: api-proxy (3000 → https://api.example.com)
 ```
@@ -115,6 +114,7 @@ When adding a proxy, you can specify which paths should be proxied:
 ```
 
 **How it works:**
+
 - If paths are specified, only requests matching those paths will be proxied
 - Matches exact paths and sub-paths (e.g., `/api/users` matches `/api/users/123`)
 - If no paths are specified, all requests are proxied
@@ -129,22 +129,6 @@ $ curl http://localhost:3000/api/users/123  # ✓ Proxied
 $ curl http://localhost:3000/other          # ✗ 404: Path not configured
 ```
 
-## Environment Variables
-
-You can use environment variables in header values using the `$VARIABLE_NAME` syntax:
-
-```bash
-# In your .env file
-TOKEN=my-secret-token
-API_KEY=abc123
-
-# In hop add prompt
-? Header value: Bearer $TOKEN
-? Header value: $API_KEY
-```
-
-The variables will be automatically replaced with values from your environment.
-
 ## Configuration
 
 Hop stores configuration in `~/.hop/config.json`:
@@ -158,7 +142,7 @@ Hop stores configuration in `~/.hop/config.json`:
       "target": "https://api.example.com",
       "paths": ["/api/users", "/api/posts"],
       "headers": {
-        "Authorization": "Bearer $TOKEN",
+        "Authorization": "Bearer your-token-here",
         "Cookie": "session=abc123"
       }
     },
@@ -193,7 +177,7 @@ hop add
 ? Paths: /api/v1/users, /api/v1/products
 ? Add custom headers? Yes
 ? Header name: Authorization
-? Header value: Bearer $API_TOKEN
+? Header value: Bearer your-api-token
 
 # Start the proxy
 hop serve my-api
