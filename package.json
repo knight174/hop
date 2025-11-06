@@ -2,11 +2,12 @@
   "name": "@miaoosi/hop",
   "version": "0.1.0",
   "description": "An extensible port proxy + request enhancement CLI tool",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "bin": {
-    "hop": "./dist/bin/hop.js"
+    "hop": "./dist/bin/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
