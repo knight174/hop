@@ -1,6 +1,6 @@
 {
   "name": "@miaoosi/hop",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "An extensible port proxy + request enhancement CLI tool",
   "bin": {
     "hop": "./dist/bin/cli.js"

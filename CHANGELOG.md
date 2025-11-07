@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.2](https://github.com/knight174/hop/compare/v0.1.1...v0.1.2) (2025-11-07)
+
+
+### Features
+
+* **proxy:** add request logging with duration and status tracking ([a3e1544](https://github.com/knight174/hop/commit/a3e15446dd669bb2dacdefdc0c439bdbbb780aa0))
+
 ### [0.1.1](https://github.com/knight174/hop/compare/v0.1.0...v0.1.1) (2025-11-07)
 
 
