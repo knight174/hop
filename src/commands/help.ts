@@ -36,12 +36,6 @@ export async function helpCommand(): Promise<void> {
   console.log();
   console.log(`  ${chalk.gray('Example paths: /api/users, /api/posts, /v1/auth')}`);
   console.log();
-  console.log(chalk.bold('ENVIRONMENT VARIABLES:'));
-  console.log('  Custom headers support environment variable substitution.');
-  console.log('  Use $VAR_NAME in header values to reference environment variables.');
-  console.log();
-  console.log(`  ${chalk.gray('Example: Authorization: Bearer $API_TOKEN')}`);
-  console.log();
   console.log(chalk.bold('CONFIGURATION:'));
   console.log(`  Config file location: ${chalk.yellow('~/.hop/config.json')}`);
   console.log();

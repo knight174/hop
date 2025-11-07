@@ -10,29 +10,34 @@ const program = new Command();
 program
   .name('hop')
   .description('An extensible port proxy + request enhancement CLI tool')
-  .version('0.1.0');
+  .version('0.1.0')
+  .helpOption('-h, --help', 'Display help for command');
 
 program
   .command('add')
   .description('Add a new proxy rule (interactive)')
+  .helpOption('-h, --help', 'Display help for this command')
   .action(addCommand);
 
 program
   .command('list')
   .alias('ls')
   .description('List all configured proxies')
+  .helpOption('-h, --help', 'Display help for this command')
   .action(listCommand);
 
 program
   .command('remove')
   .alias('rm')
   .description('Remove a proxy rule (interactive)')
+  .helpOption('-h, --help', 'Display help for this command')
   .action(removeCommand);
 
 program
   .command('serve [names...]')
   .alias('start')
   .description('Start the proxy server (optionally specify proxy names)')
+  .helpOption('-h, --help', 'Display help for this command')
   .action(serveCommand);
 
 program
