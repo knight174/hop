@@ -27,7 +27,27 @@ export function createProxyServer(rule: ProxyRule): http.Server {
     }
   });
 
+  proxy.on('proxyRes', (proxyRes: any, req: any) => {
+    // Add CORS headers to the response
+    proxyRes.headers['access-control-allow-origin'] = req.headers.origin || '*';
+    proxyRes.headers['access-control-allow-headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+    proxyRes.headers['access-control-allow-methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+    proxyRes.headers['access-control-allow-credentials'] = 'true';
+  });
+
   const server = http.createServer((req, res) => {
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': req.headers.origin || '*',
+        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Credentials': 'true'
+      });
+      res.end();
+      return;
+    }
+
     // Check path matching if paths are configured
     if (rule.paths && rule.paths.length > 0) {
       const requestPath = req.url || '/';
