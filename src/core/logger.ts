@@ -13,7 +13,7 @@ export const logger = {
     console.log(chalk.blue('ℹ'), message);
   },
 
-  warning(message: string): void {
+  warn(message: string): void {
     console.log(chalk.yellow('⚠'), message);
   },
 
