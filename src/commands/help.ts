@@ -10,6 +10,7 @@ export async function helpCommand(): Promise<void> {
   console.log(chalk.bold('COMMANDS:'));
   console.log(`  ${chalk.cyan('add')}              Add a new proxy rule (interactive)`);
   console.log(`  ${chalk.cyan('list, ls')}         List all configured proxies`);
+  console.log(`  ${chalk.cyan('edit')}             Edit an existing proxy rule (interactive)`);
   console.log(`  ${chalk.cyan('remove, rm')}       Remove a proxy rule (interactive)`);
   console.log(`  ${chalk.cyan('serve [names...]')} Start proxy servers (all or specific ones)`);
   console.log(`  ${chalk.cyan('help')}             Display this help information`);
@@ -20,6 +21,9 @@ export async function helpCommand(): Promise<void> {
   console.log();
   console.log(`  ${chalk.gray('# List all proxies')}`);
   console.log(`  $ hop list`);
+  console.log();
+  console.log(`  ${chalk.gray('# Edit a proxy')}`);
+  console.log(`  $ hop edit`);
   console.log();
   console.log(`  ${chalk.gray('# Start all proxies')}`);
   console.log(`  $ hop serve`);

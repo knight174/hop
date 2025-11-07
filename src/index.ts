@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { addCommand } from './commands/add';
 import { listCommand } from './commands/list';
 import { removeCommand } from './commands/remove';
+import { editCommand } from './commands/edit';
 import { serveCommand } from './commands/serve';
 import { helpCommand } from './commands/help';
 
@@ -32,6 +33,12 @@ program
   .description('Remove a proxy rule (interactive)')
   .helpOption('-h, --help', 'Display help for this command')
   .action(removeCommand);
+
+program
+  .command('edit')
+  .description('Edit an existing proxy rule (interactive)')
+  .helpOption('-h, --help', 'Display help for this command')
+  .action(editCommand);
 
 program
   .command('serve [names...]')

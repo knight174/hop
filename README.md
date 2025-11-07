@@ -56,7 +56,20 @@ Output:
 └──────────────┴──────┴─────────────────────────┴──────────────────────┴─────────────────┘
 ```
 
-### 3. Start the proxy server
+### 3. Edit a proxy
+
+```bash
+hop edit
+```
+
+Select a proxy and choose which properties to edit (name, port, target, paths, or headers). You can:
+
+- Update individual fields
+- Add or remove headers
+- Replace all headers
+- Clear all headers
+
+### 4. Start the proxy server
 
 **Start all proxies:**
 
@@ -81,7 +94,7 @@ Output:
 ℹ Press Ctrl+C to stop
 ```
 
-### 4. Remove a proxy
+### 5. Remove a proxy
 
 ```bash
 hop remove
@@ -89,7 +102,7 @@ hop remove
 
 Select the proxy you want to remove from the list.
 
-### 5. Get help
+### 6. Get help
 
 ```bash
 hop help
@@ -101,6 +114,7 @@ hop help
 |---------|---------|-------------|
 | `hop add` | - | Add a new proxy rule (interactive) |
 | `hop list` | `ls` | List all configured proxies |
+| `hop edit` | - | Edit an existing proxy rule (interactive) |
 | `hop remove` | `rm` | Remove a proxy rule (interactive) |
 | `hop serve [names...]` | `start` | Start proxy servers (all or specific ones) |
 | `hop help` | - | Display detailed help information |
@@ -199,6 +213,25 @@ hop serve
 
 # Or start only specific services
 hop serve users-api orders-api
+```
+
+### Example 3: Editing an Existing Proxy
+
+```bash
+# Edit a proxy configuration
+hop edit
+? Select proxy to edit: my-api (port: 3000 → https://api.production.com)
+? What would you like to edit? (Press space to select)
+  ◉ Port
+  ◉ Headers
+
+? New local port: 3001
+? How would you like to manage headers? Keep existing and add more
+? Header name: X-Custom-Header
+? Header value: custom-value
+? Add another header? No
+
+✔ Proxy updated: my-api
 ```
 
 ## Development
