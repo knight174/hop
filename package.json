@@ -12,7 +12,9 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "watch": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "release": "standard-version",
+    "release:first": "standard-version --first-release"
   },
   "keywords": [
     "proxy",
@@ -41,6 +43,7 @@
     "@types/http-proxy": "^1.17.15",
     "@types/inquirer": "^8.2.10",
     "@types/node": "^22.10.2",
+    "standard-version": "^9.5.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
