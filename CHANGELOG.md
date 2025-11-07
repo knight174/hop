@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/knight174/hop/compare/v0.1.0...v0.1.1) (2025-11-07)
+
+
+### Features
+
+* **proxy:** add CORS support with preflight handling ([eca9f43](https://github.com/knight174/hop/commit/eca9f43fd41179503bd375812bc8d34b8c970b4d))
+
 ## 0.1.0 (2025-11-07)
 
 
