@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.3](https://github.com/knight174/hop/compare/v0.1.2...v0.1.3) (2025-11-08)
+
+
+### Features
+
+* **cli:** add package metadata and dynamic version handling ([5bd48b9](https://github.com/knight174/hop/commit/5bd48b9718bff0d17e90cbd7b728d02fcef2c6ba))
+
 ### [0.1.2](https://github.com/knight174/hop/compare/v0.1.1...v0.1.2) (2025-11-07)
 
 
