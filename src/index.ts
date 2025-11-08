@@ -1,4 +1,6 @@
 import { Command } from 'commander';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { addCommand } from './commands/add';
 import { listCommand } from './commands/list';
 import { removeCommand } from './commands/remove';
@@ -6,12 +8,16 @@ import { editCommand } from './commands/edit';
 import { serveCommand } from './commands/serve';
 import { helpCommand } from './commands/help';
 
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, '../package.json'), 'utf-8')
+);
+
 const program = new Command();
 
 program
   .name('hop')
-  .description('An extensible port proxy + request enhancement CLI tool')
-  .version('0.1.0')
+  .description('Smart proxying made simple.')
+  .version(packageJson.version)
   .helpOption('-h, --help', 'Display help for command');
 
 program

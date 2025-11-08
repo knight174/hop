@@ -1,6 +1,8 @@
-# hop
+# 🦘 hop
 
-An extensible port proxy + request enhancement CLI tool for local development.
+_Smart proxying made simple._
+
+An extensible port proxy and request enhancement CLI tool for local development.
 
 ## Features
 
