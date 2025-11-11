@@ -37,26 +37,15 @@ export function createProxyServer(rule: ProxyRule): http.Server {
     proxyRes.headers['access-control-allow-methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
     proxyRes.headers['access-control-allow-credentials'] = 'true';
 
-    // Log proxy response with appropriate color based on status code
+    // Log proxy response
     const duration = Date.now() - (req._startTime || Date.now());
     const statusCode = proxyRes.statusCode;
-    const logMessage = `${req.method} ${req.url} → ${statusCode} (${duration}ms)`;
-
-    if (statusCode >= 200 && statusCode < 300) {
-      logger.success(logMessage);
-    } else if (statusCode >= 400) {
-      logger.error(logMessage);
-    } else {
-      logger.info(logMessage);
-    }
+    logger.request(req.method || 'UNKNOWN', req.url || '/', statusCode, duration);
   });
 
   const server = http.createServer((req, res) => {
     const requestPath = req.url || '/';
     const startTime = Date.now();
-
-    // Log incoming request with cyan color for method
-    logger.info(`${req.method} ${requestPath}`);
 
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
@@ -67,7 +56,7 @@ export function createProxyServer(rule: ProxyRule): http.Server {
         'Access-Control-Allow-Credentials': 'true'
       });
       res.end();
-      logger.success(`${req.method} ${requestPath} → 200 OPTIONS (${Date.now() - startTime}ms)`);
+      logger.request(req.method || 'OPTIONS', requestPath, 200, Date.now() - startTime);
       return;
     }
 
@@ -76,9 +65,9 @@ export function createProxyServer(rule: ProxyRule): http.Server {
       const matched = rule.paths.some(path => requestPath === path || requestPath.startsWith(path + '/') || requestPath.startsWith(path + '?'));
 
       if (!matched) {
-        logger.warn(`${req.method} ${requestPath} → 404 Path not matched. Configured: ${rule.paths.join(', ')}`);
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end(`Path not configured for proxy. Allowed paths: ${rule.paths.join(', ')}`);
+        logger.request(req.method || 'UNKNOWN', requestPath, 404, Date.now() - startTime);
         return;
       }
     }
