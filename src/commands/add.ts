@@ -103,9 +103,13 @@ export async function addCommand(): Promise<void> {
       name: answers.name,
       port: answers.port,
       target: answers.target,
-      paths: answers.paths
-        ? answers.paths.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0)
-        : undefined,
+      paths: (() => {
+        if (!answers.paths || !answers.paths.trim()) {
+          return undefined;
+        }
+        const parsed = answers.paths.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0);
+        return parsed.length > 0 ? parsed : undefined;
+      })(),
       headers: Object.keys(headers).length > 0 ? headers : undefined
     };
 

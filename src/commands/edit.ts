@@ -145,9 +145,13 @@ export async function editCommand(): Promise<void> {
           default: currentPaths
         }
       ]);
-      updates.paths = answer.paths
-        ? answer.paths.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0)
-        : undefined;
+      updates.paths = (() => {
+        if (!answer.paths || !answer.paths.trim()) {
+          return undefined;
+        }
+        const parsed = answer.paths.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0);
+        return parsed.length > 0 ? parsed : undefined;
+      })();
     }
 
     // Edit headers
