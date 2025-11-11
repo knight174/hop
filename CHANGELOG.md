@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.4](https://github.com/knight174/hop/compare/v0.1.3...v0.1.4) (2025-11-11)
+
+
+### Features
+
+* **logger:** enhance logging with timestamps and HTTP request formatting ([59f6aa3](https://github.com/knight174/hop/commit/59f6aa3565a29b47f3af7a660105047cb22bd2ff))
+
+
+### Bug Fixes
+
+* **commands:** improve path parsing logic to handle empty inputs ([6f97d96](https://github.com/knight174/hop/commit/6f97d96770d8e8162d089592a4ce1f2550093544))
+
 ### [0.1.3](https://github.com/knight174/hop/compare/v0.1.2...v0.1.3) (2025-11-08)
 
 
