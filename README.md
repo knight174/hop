@@ -171,6 +171,34 @@ Hop stores configuration in `~/.hop/config.json`:
 }
 ```
 
+### CORS Configuration
+
+By default, Hop automatically handles CORS headers by mirroring the client's requested headers. For more control, you can configure CORS settings:
+
+```json
+{
+  "name": "custom-cors-proxy",
+  "port": 3000,
+  "target": "https://api.example.com",
+  "cors": {
+    "allowOrigin": "https://myapp.com",
+    "allowHeaders": ["Content-Type", "Authorization", "X-Custom-Header"],
+    "allowMethods": ["GET", "POST", "PUT", "DELETE"],
+    "allowCredentials": true
+  }
+}
+```
+
+**CORS Options:**
+
+- `allowOrigin` (string, optional): Specific origin to allow. Defaults to the request origin or `*`
+- `allowHeaders` (string[] | '*', optional): Array of allowed headers or `'*'` for all. If not specified, automatically mirrors the client's requested headers
+- `allowMethods` (string[], optional): Array of allowed HTTP methods. Defaults to `['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']`
+- `allowCredentials` (boolean, optional): Whether to allow credentials. Defaults to `true`
+
+> [!NOTE]
+> The default behavior (without explicit CORS config) is smart - it automatically allows whatever headers the client requests, making it work seamlessly with any custom headers like `x-csrf-token` without manual configuration.
+
 ## Use Cases
 
 - 🔐 **API Development** - Proxy API requests to add authentication headers
@@ -235,6 +263,34 @@ hop edit
 
 ✔ Proxy updated: my-api
 ```
+
+### Example 4: Custom CORS Configuration
+
+For scenarios where you need strict CORS control or want to allow specific origins only:
+
+```json
+{
+  "name": "secure-api",
+  "port": 4000,
+  "target": "https://secure-api.example.com",
+  "headers": {
+    "Authorization": "Bearer secret-token"
+  },
+  "cors": {
+    "allowOrigin": "https://trusted-domain.com",
+    "allowHeaders": ["Content-Type", "Authorization", "X-CSRF-Token"],
+    "allowMethods": ["GET", "POST"],
+    "allowCredentials": true
+  }
+}
+```
+
+This configuration:
+
+- Only allows requests from `https://trusted-domain.com`
+- Restricts headers to a specific whitelist
+- Only permits GET and POST methods
+- Enables credential support for cookies and auth headers
 
 ## Development
 
