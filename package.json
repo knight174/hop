@@ -41,6 +41,8 @@
     "access": "public"
   },
   "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
@@ -51,6 +53,7 @@
     "selfsigned": "^4.0.0"
   },
   "devDependencies": {
+    "@types/blessed": "^0.1.26",
     "@types/fs-extra": "^11.0.4",
     "@types/http-proxy": "^1.17.15",
     "@types/inquirer": "^8.2.10",

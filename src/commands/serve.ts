@@ -8,7 +8,7 @@ import chalk from 'chalk';
 
 interface ServerInfo {
   proxy: ProxyRule;
-  server: http.Server;
+  server: http.Server | any; // Use any to avoid complex type issues with https.Server
 }
 
 export async function serveCommand(proxyNames: string[] = []): Promise<void> {
@@ -50,8 +50,11 @@ export async function serveCommand(proxyNames: string[] = []): Promise<void> {
     const servers: ServerInfo[] = [];
     for (const proxy of proxiesToStart) {
       try {
-        const server = await startProxy(proxy);
+        const { server, proxy: proxyHandler } = await startProxy(proxy);
         servers.push({ proxy, server });
+
+        // Store proxy handler for dashboard
+        (server as any)._proxyHandler = proxyHandler;
       } catch (error) {
         spinner.fail();
         if (error instanceof Error) {
@@ -61,27 +64,54 @@ export async function serveCommand(proxyNames: string[] = []): Promise<void> {
       }
     }
 
-    spinner.succeed(chalk.green('Hop proxy server running!'));
+    spinner.stop();
 
-    console.log();
-    servers.forEach(({ proxy }) => {
-      const pathsInfo = proxy.paths && proxy.paths.length > 0
-        ? ` (paths: ${proxy.paths.join(', ')})`
-        : '';
-      console.log(chalk.green('✓') + ` Started ${chalk.cyan(proxy.name)} on port ${chalk.yellow(proxy.port)} → ${chalk.blue(proxy.target)}${pathsInfo}`);
+    // Initialize Dashboard
+    // We need to dynamically import Dashboard to avoid issues if it's not used
+    const { Dashboard } = await import('../core/dashboard');
+
+    // Monkey patch console.log to avoid messing up TUI
+    const originalConsoleLog = console.log;
+    console.log = () => {};
+    console.error = () => {};
+    console.warn = () => {};
+    console.info = () => {};
+
+    const dashboard = new Dashboard();
+
+    // Connect proxies to dashboard
+    servers.forEach(({ server }) => {
+      const proxyHandler = (server as any)._proxyHandler;
+      if (proxyHandler) {
+        proxyHandler.on('request', (data: any) => {
+          dashboard.addRequest({
+            id: data.id,
+            method: data.method,
+            path: data.path,
+            startTime: data.startTime,
+            reqHeaders: data.headers
+          });
+        });
+
+        proxyHandler.on('response', (data: any) => {
+          dashboard.updateRequest(data.id, {
+            statusCode: data.statusCode,
+            duration: data.duration,
+            resHeaders: data.headers
+          });
+        });
+      }
     });
-    console.log();
-
-    logger.info('Press Ctrl+C to stop');
 
     // Keep process alive
     process.on('SIGINT', () => {
-      console.log();
-      logger.info('Stopping proxy servers...');
+      // Restore console
+      console.log = originalConsoleLog;
+      console.error = originalConsoleLog;
+
       servers.forEach(({ server }) => {
         server.close();
       });
-      logger.success('Proxy servers stopped');
       process.exit(0);
     });
 

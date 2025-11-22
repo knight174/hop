@@ -44,7 +44,7 @@ function getCorsHeaders(rule: ProxyRule, req: http.IncomingMessage): {
   };
 }
 
-export function createProxyServer(rule: ProxyRule): http.Server {
+export function createProxyServer(rule: ProxyRule): { server: http.Server, proxy: any } {
   const proxy = httpProxy.createProxyServer({
     target: rule.target,
     changeOrigin: true,
@@ -82,12 +82,36 @@ export function createProxyServer(rule: ProxyRule): http.Server {
     // Log proxy response
     const duration = Date.now() - (req._startTime || Date.now());
     const statusCode = proxyRes.statusCode;
-    logger.request(req.method || 'UNKNOWN', req.url || '/', statusCode, duration);
+
+    // Emit event instead of logging directly if listener exists
+    if (proxy.listenerCount('response') > 0) {
+      proxy.emit('response', {
+        id: req._id,
+        statusCode,
+        duration,
+        headers: proxyRes.headers
+      });
+    } else {
+      logger.request(req.method || 'UNKNOWN', req.url || '/', statusCode, duration);
+    }
   });
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer((req: any, res) => {
     const requestPath = req.url || '/';
     const startTime = Date.now();
+    req._id = Math.random().toString(36).substring(7);
+    req._startTime = startTime;
+
+    // Emit request event
+    if (proxy.listenerCount('request') > 0) {
+      proxy.emit('request', {
+        id: req._id,
+        method: req.method,
+        path: requestPath,
+        startTime,
+        headers: req.headers
+      });
+    }
 
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
@@ -130,12 +154,13 @@ export function createProxyServer(rule: ProxyRule): http.Server {
     proxy.web(req, res);
   });
 
-  return server;
+  return { server, proxy };
 }
 
-export async function startProxy(rule: ProxyRule): Promise<http.Server | https.Server> {
+export async function startProxy(rule: ProxyRule): Promise<{ server: http.Server | https.Server, proxy: any }> {
   return new Promise(async (resolve, reject) => {
     let server: http.Server | https.Server;
+    let proxyHandler: any;
 
     if (rule.https) {
       try {
@@ -143,7 +168,8 @@ export async function startProxy(rule: ProxyRule): Promise<http.Server | https.S
         const certs = await getCertificate();
 
         // Create the proxy handler first
-        const proxyHandler = createProxyServer(rule);
+        const result = createProxyServer(rule);
+        proxyHandler = result.proxy;
 
         // Create HTTPS server
         server = https.createServer(certs, (req, res) => {
@@ -154,7 +180,9 @@ export async function startProxy(rule: ProxyRule): Promise<http.Server | https.S
         return;
       }
     } else {
-      server = createProxyServer(rule);
+      const result = createProxyServer(rule);
+      server = result.server;
+      proxyHandler = result.proxy;
     }
 
     server.on('error', (err: NodeJS.ErrnoException) => {
@@ -166,7 +194,7 @@ export async function startProxy(rule: ProxyRule): Promise<http.Server | https.S
     });
 
     server.listen(rule.port, () => {
-      resolve(server);
+      resolve({ server, proxy: proxyHandler });
     });
   });
 }
