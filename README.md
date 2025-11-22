@@ -14,6 +14,8 @@ An extensible port proxy and request enhancement CLI tool for local development.
 - **Local HTTPS**: Auto-generated self-signed certificates for local HTTPS support.
 - **Project-Level Config**: Automatically detects `hop.json` in your current directory.
 - **TUI Dashboard**: Interactive terminal dashboard to monitor requests and responses in real-time.
+- **Config Sharing**: Export and import proxy configurations easily (Base64/JSON).
+- **Plugin System**: Extend functionality with custom JavaScript plugins.
 
 ## Installation
 
@@ -27,7 +29,7 @@ npm install -g @miaoosi/hop
     ```bash
     hop add
     ```
-    Follow the interactive prompts to configure your proxy. You can enable HTTPS, add path rewrites, and custom headers.
+    Follow the interactive prompts to configure your proxy. You can enable HTTPS, add path rewrites, custom headers, and plugins.
 
 2.  **Start the server**:
     ```bash
@@ -39,9 +41,11 @@ npm install -g @miaoosi/hop
 
 - `hop add`: Add a new proxy rule.
 - `hop list`: List all configured proxies.
-- `hop edit`: Edit an existing proxy (modify target, headers, rewrites, etc.).
+- `hop edit`: Edit an existing proxy (modify target, headers, rewrites, plugins, etc.).
 - `hop remove`: Remove a proxy.
-- `hop serve [names...]`: Start the proxy server(s). If names are provided, only those proxies will start.
+- `hop serve [names...]`: Start the proxy server(s).
+- `hop export [name]`: Export configuration (Base64).
+- `hop import <input>`: Import configuration from Base64 string or file.
 
 ## Configuration
 
@@ -65,11 +69,38 @@ npm install -g @miaoosi/hop
       },
       "headers": {
         "Authorization": "Bearer token"
-      }
+      },
+      "plugins": ["./my-plugin.js"]
     }
   ]
 }
 ```
+
+## Plugin System
+
+You can extend `hop` by attaching custom JavaScript plugins to your proxies.
+
+**1. Create a plugin file (e.g., `logger.js`)**:
+
+```javascript
+module.exports = {
+  // Executed before request is forwarded
+  onRequest: (req, res, next) => {
+    console.log('Request:', req.url);
+    req.headers['x-custom-header'] = 'hello';
+    next();
+  },
+
+  // Executed after response is received
+  onResponse: (proxyRes, req, res) => {
+    console.log('Status:', proxyRes.statusCode);
+  }
+};
+```
+
+**2. Add it to your proxy**:
+- Via CLI: Select "Plugins" when adding/editing.
+- Via Config: Add `"plugins": ["./logger.js"]` to your `hop.json`.
 
 ## TUI Dashboard
 
