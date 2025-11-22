@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.6](https://github.com/knight174/hop/compare/v0.1.5...v0.1.6) (2025-11-22)
+
+
+### Features
+
+* Add demo plugin, redirect console output to dashboard, and enhance dashboard UI with system logs, dynamic table, and focus management. ([7582929](https://github.com/knight174/hop/commit/7582929980655c324365123dcb99e6b746605e6a))
+* add export and import commands for proxy configurations and update README. ([f952c0b](https://github.com/knight174/hop/commit/f952c0b1803812f499ada04b1361c628212925dd))
+* Add HTTPS proxying, path rewriting, and debug logging. ([60ccaa0](https://github.com/knight174/hop/commit/60ccaa0a9eb3c004111016a9c06e8e86f782e7ed))
+* implement proxy plugin system with `onRequest` and `onResponse` hooks, including dynamic loading and UI management ([20f360f](https://github.com/knight174/hop/commit/20f360ffc28b4e4ac7bb21505e6906a82d8b0a0b))
+* Introduce a real-time TUI dashboard for proxy requests and responses. ([2e78c12](https://github.com/knight174/hop/commit/2e78c12e6e77dcb51bfaad0823afdf58ce74be13))
+
 ### [0.1.5](https://github.com/knight174/hop/compare/v0.1.4...v0.1.5) (2025-11-14)
 
 

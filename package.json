@@ -1,6 +1,6 @@
 {
   "name": "@miaoosi/hop",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Smart proxying made simple.",
   "type": "commonjs",
   "main": "dist/index.js",
