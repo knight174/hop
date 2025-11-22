@@ -70,14 +70,23 @@ export async function serveCommand(proxyNames: string[] = []): Promise<void> {
     // We need to dynamically import Dashboard to avoid issues if it's not used
     const { Dashboard } = await import('../core/dashboard');
 
-    // Monkey patch console.log to avoid messing up TUI
-    const originalConsoleLog = console.log;
-    console.log = () => {};
-    console.error = () => {};
-    console.warn = () => {};
-    console.info = () => {};
-
     const dashboard = new Dashboard();
+
+    // Monkey patch console.log to avoid messing up TUI
+    // Redirect to dashboard log instead
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+
+    console.log = (...args: any[]) => {
+      dashboard.log(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+    };
+    console.error = (...args: any[]) => {
+      dashboard.log(chalk.red(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')));
+    };
+    console.warn = (...args: any[]) => {
+      dashboard.log(chalk.yellow(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')));
+    };
+    console.info = console.log;
 
     // Connect proxies to dashboard
     servers.forEach(({ server }) => {
