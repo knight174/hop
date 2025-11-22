@@ -1,10 +1,13 @@
 import Table from 'cli-table3';
-import { loadConfig } from '../core/config';
+import { loadConfig, getConfigPath } from '../core/config';
 import { logger } from '../core/logger';
 
 export async function listCommand(): Promise<void> {
   try {
     const config = await loadConfig();
+    const configPath = getConfigPath();
+
+    logger.info(`Using config: ${configPath}`);
 
     if (config.proxies.length === 0) {
       logger.info('No proxies configured yet. Use "hop add" to add one.');

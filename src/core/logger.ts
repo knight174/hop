@@ -56,6 +56,12 @@ export const logger = {
     console.log(getTimestamp(), chalk.yellow('⚠'), message);
   },
 
+  debug(message: string): void {
+    if (process.env.DEBUG) {
+      console.log(getTimestamp(), chalk.magenta('🐛'), message);
+    }
+  },
+
   proxy(port: number, target: string): void {
     console.log(getTimestamp(), chalk.cyan('→'), `${port} → ${target}`);
   },

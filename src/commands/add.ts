@@ -58,6 +58,12 @@ export async function addCommand(): Promise<void> {
         name: 'addHeaders',
         message: 'Add custom headers?',
         default: false
+      },
+      {
+        type: 'confirm',
+        name: 'https',
+        message: 'Enable HTTPS?',
+        default: false
       }
     ]);
 
@@ -99,6 +105,53 @@ export async function addCommand(): Promise<void> {
       }
     }
 
+    const pathRewrites: Record<string, string> = {};
+    const addRewrites = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirm',
+        message: 'Configure path rewrites?',
+        default: false
+      }
+    ]);
+
+    if (addRewrites.confirm) {
+      let addMore = true;
+      while (addMore) {
+        const rewriteAnswer = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'pattern',
+            message: 'Pattern (regex):',
+            validate: (input: string) => {
+              if (!input) return 'Pattern is required';
+              try {
+                new RegExp(input);
+                return true;
+              } catch {
+                return 'Invalid regex pattern';
+              }
+            }
+          },
+          {
+            type: 'input',
+            name: 'replacement',
+            message: 'Replacement:',
+            default: ''
+          },
+          {
+            type: 'confirm',
+            name: 'addAnother',
+            message: 'Add another rewrite rule?',
+            default: false
+          }
+        ]);
+
+        pathRewrites[rewriteAnswer.pattern] = rewriteAnswer.replacement;
+        addMore = rewriteAnswer.addAnother;
+      }
+    }
+
     const proxy: ProxyRule = {
       name: answers.name,
       port: answers.port,
@@ -110,7 +163,9 @@ export async function addCommand(): Promise<void> {
         const parsed = answers.paths.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0);
         return parsed.length > 0 ? parsed : undefined;
       })(),
-      headers: Object.keys(headers).length > 0 ? headers : undefined
+      pathRewrite: Object.keys(pathRewrites).length > 0 ? pathRewrites : undefined,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
+      https: answers.https
     };
 
     await addProxy(proxy);

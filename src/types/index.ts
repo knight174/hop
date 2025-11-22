@@ -10,8 +10,10 @@ export interface ProxyRule {
   port: number;
   target: string;
   paths?: string[];
+  pathRewrite?: Record<string, string>;
   headers?: Record<string, string>;
   cors?: CorsConfig;
+  https?: boolean;
 }
 
 export interface HopConfig {
@@ -23,5 +25,7 @@ export interface AddProxyOptions {
   port?: number;
   target?: string;
   paths?: string[];
+  pathRewrite?: Record<string, string>;
   headers?: Record<string, string>;
+  https?: boolean;
 }

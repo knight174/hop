@@ -4,11 +4,19 @@ import * as os from 'os';
 import { HopConfig, ProxyRule } from '../types';
 
 const CONFIG_DIR = path.join(os.homedir(), '.hop');
-const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
+const GLOBAL_CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
 const DEFAULT_CONFIG: HopConfig = {
   proxies: []
 };
+
+export function getConfigPath(): string {
+  const localPath = path.join(process.cwd(), 'hop.json');
+  if (fs.existsSync(localPath)) {
+    return localPath;
+  }
+  return GLOBAL_CONFIG_FILE;
+}
 
 export async function ensureConfigDir(): Promise<void> {
   await fs.ensureDir(CONFIG_DIR);
@@ -16,14 +24,18 @@ export async function ensureConfigDir(): Promise<void> {
 
 export async function loadConfig(): Promise<HopConfig> {
   try {
-    await ensureConfigDir();
+    const configPath = getConfigPath();
+    const isGlobal = configPath === GLOBAL_CONFIG_FILE;
 
-    if (!(await fs.pathExists(CONFIG_FILE))) {
-      await fs.writeJson(CONFIG_FILE, DEFAULT_CONFIG, { spaces: 2 });
-      return DEFAULT_CONFIG;
+    if (isGlobal) {
+      await ensureConfigDir();
+      if (!(await fs.pathExists(configPath))) {
+        await fs.writeJson(configPath, DEFAULT_CONFIG, { spaces: 2 });
+        return DEFAULT_CONFIG;
+      }
     }
 
-    const config = await fs.readJson(CONFIG_FILE);
+    const config = await fs.readJson(configPath);
     return config;
   } catch (error) {
     throw new Error(`Failed to load config: ${error}`);
@@ -32,8 +44,14 @@ export async function loadConfig(): Promise<HopConfig> {
 
 export async function saveConfig(config: HopConfig): Promise<void> {
   try {
-    await ensureConfigDir();
-    await fs.writeJson(CONFIG_FILE, config, { spaces: 2 });
+    const configPath = getConfigPath();
+    const isGlobal = configPath === GLOBAL_CONFIG_FILE;
+
+    if (isGlobal) {
+      await ensureConfigDir();
+    }
+
+    await fs.writeJson(configPath, config, { spaces: 2 });
   } catch (error) {
     throw new Error(`Failed to save config: ${error}`);
   }
@@ -84,6 +102,4 @@ export async function getProxy(nameOrPort: string | number): Promise<ProxyRule |
   }
 }
 
-export function getConfigPath(): string {
-  return CONFIG_FILE;
-}
+

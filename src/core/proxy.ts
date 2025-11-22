@@ -1,4 +1,5 @@
 import * as http from 'http';
+import * as https from 'https';
 import httpProxy from 'http-proxy';
 import { ProxyRule } from '../types';
 import { logger } from './logger';
@@ -114,15 +115,47 @@ export function createProxyServer(rule: ProxyRule): http.Server {
       }
     }
 
+    // Apply path rewrites if configured
+    if (rule.pathRewrite) {
+      Object.entries(rule.pathRewrite).forEach(([pattern, replacement]) => {
+        const regex = new RegExp(pattern);
+        if (req.url && regex.test(req.url)) {
+          const originalUrl = req.url;
+          req.url = req.url.replace(regex, replacement);
+          logger.debug(`Rewrote path: ${originalUrl} -> ${req.url}`);
+        }
+      });
+    }
+
     proxy.web(req, res);
   });
 
   return server;
 }
 
-export async function startProxy(rule: ProxyRule): Promise<http.Server> {
-  return new Promise((resolve, reject) => {
-    const server = createProxyServer(rule);
+export async function startProxy(rule: ProxyRule): Promise<http.Server | https.Server> {
+  return new Promise(async (resolve, reject) => {
+    let server: http.Server | https.Server;
+
+    if (rule.https) {
+      try {
+        const { getCertificate } = await import('./cert');
+        const certs = await getCertificate();
+
+        // Create the proxy handler first
+        const proxyHandler = createProxyServer(rule);
+
+        // Create HTTPS server
+        server = https.createServer(certs, (req, res) => {
+          proxyHandler.emit('request', req, res);
+        });
+      } catch (error) {
+        reject(error);
+        return;
+      }
+    } else {
+      server = createProxyServer(rule);
+    }
 
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {

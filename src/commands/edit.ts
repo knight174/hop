@@ -36,7 +36,9 @@ export async function editCommand(): Promise<void> {
       { name: 'Port', value: 'port' },
       { name: 'Target URL', value: 'target' },
       { name: 'Paths', value: 'paths' },
+      { name: 'Path Rewrites', value: 'pathRewrite' },
       { name: 'Headers', value: 'headers' },
+      { name: 'HTTPS', value: 'https' },
       { name: 'Edit all', value: 'all' }
     ];
 
@@ -56,7 +58,7 @@ export async function editCommand(): Promise<void> {
     ]);
 
     const fieldsToEdit = whatToEdit.fields.includes('all')
-      ? ['name', 'port', 'target', 'paths', 'headers']
+      ? ['name', 'port', 'target', 'paths', 'pathRewrite', 'headers', 'https']
       : whatToEdit.fields;
 
     const updates: Partial<ProxyRule> = {};
@@ -152,6 +154,141 @@ export async function editCommand(): Promise<void> {
         const parsed = answer.paths.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0);
         return parsed.length > 0 ? parsed : undefined;
       })();
+    }
+
+    // Edit path rewrites
+    if (fieldsToEdit.includes('pathRewrite')) {
+      const manageRewrites = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'action',
+          message: 'How would you like to manage path rewrites?',
+          choices: [
+            { name: 'Keep existing and add more', value: 'add' },
+            { name: 'Remove specific rewrites', value: 'remove' },
+            { name: 'Replace all rewrites', value: 'replace' },
+            { name: 'Clear all rewrites', value: 'clear' }
+          ]
+        }
+      ]);
+
+      const rewrites: Record<string, string> = { ...(proxy.pathRewrite || {}) };
+
+      if (manageRewrites.action === 'clear') {
+        updates.pathRewrite = undefined;
+      } else if (manageRewrites.action === 'replace') {
+        const newRewrites: Record<string, string> = {};
+        let addMore = true;
+
+        while (addMore) {
+          const rewriteAnswer = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'pattern',
+              message: 'Pattern (regex):',
+              validate: (input: string) => {
+                if (!input) return 'Pattern is required';
+                try {
+                  new RegExp(input);
+                  return true;
+                } catch {
+                  return 'Invalid regex pattern';
+                }
+              }
+            },
+            {
+              type: 'input',
+              name: 'replacement',
+              message: 'Replacement:',
+              default: ''
+            },
+            {
+              type: 'confirm',
+              name: 'addAnother',
+              message: 'Add another rewrite rule?',
+              default: false
+            }
+          ]);
+
+          newRewrites[rewriteAnswer.pattern] = rewriteAnswer.replacement;
+          addMore = rewriteAnswer.addAnother;
+        }
+
+        updates.pathRewrite = Object.keys(newRewrites).length > 0 ? newRewrites : undefined;
+      } else if (manageRewrites.action === 'remove') {
+        if (Object.keys(rewrites).length === 0) {
+          logger.info('No rewrites to remove.');
+        } else {
+          const removeAnswer = await inquirer.prompt([
+            {
+              type: 'checkbox',
+              name: 'toRemove',
+              message: 'Select rewrites to remove:',
+              choices: Object.keys(rewrites).map(key => ({
+                name: `${key} -> ${rewrites[key]}`,
+                value: key
+              }))
+            }
+          ]);
+
+          removeAnswer.toRemove.forEach((key: string) => {
+            delete rewrites[key];
+          });
+
+          updates.pathRewrite = Object.keys(rewrites).length > 0 ? rewrites : undefined;
+        }
+      } else if (manageRewrites.action === 'add') {
+        let addMore = true;
+
+        while (addMore) {
+          const rewriteAnswer = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'pattern',
+              message: 'Pattern (regex):',
+              validate: (input: string) => {
+                if (!input) return 'Pattern is required';
+                try {
+                  new RegExp(input);
+                  return true;
+                } catch {
+                  return 'Invalid regex pattern';
+                }
+              }
+            },
+            {
+              type: 'input',
+              name: 'replacement',
+              message: 'Replacement:',
+              default: ''
+            },
+            {
+              type: 'confirm',
+              name: 'addAnother',
+              message: 'Add another rewrite rule?',
+              default: false
+            }
+          ]);
+
+          rewrites[rewriteAnswer.pattern] = rewriteAnswer.replacement;
+          addMore = rewriteAnswer.addAnother;
+        }
+
+        updates.pathRewrite = Object.keys(rewrites).length > 0 ? rewrites : undefined;
+      }
+    }
+
+    // Edit HTTPS
+    if (fieldsToEdit.includes('https')) {
+      const answer = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'https',
+          message: 'Enable HTTPS?',
+          default: proxy.https || false
+        }
+      ]);
+      updates.https = answer.https;
     }
 
     // Edit headers
