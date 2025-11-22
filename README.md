@@ -6,12 +6,14 @@ An extensible port proxy and request enhancement CLI tool for local development.
 
 ## Features
 
-- 🎯 **Named proxy rules** - Manage proxies like Docker containers with meaningful names
-- 🛣️ **Path-based routing** - Proxy only specific API paths
-- 🔄 **Multiple proxies** - Run multiple proxies simultaneously
-- 🎨 **Interactive CLI** - Beautiful terminal UI with colors and animations
-- 🔐 **Custom headers** - Add authentication headers, cookies, etc.
-- 🌍 **Simple configuration** - JSON-based config stored in `~/.hop/config.json`
+- **Easy Proxy Management**: Add, list, remove, and edit proxies via interactive CLI.
+- **Path-Based Routing**: Forward specific paths to different targets.
+- **Path Rewriting**: Rewrite URL paths using regex patterns (e.g., `/api/v1` -> `/v2`).
+- **Custom Headers**: Inject custom headers (e.g., Authorization cookies) into requests.
+- **CORS Support**: Automatically handles CORS preflight requests.
+- **Local HTTPS**: Auto-generated self-signed certificates for local HTTPS support.
+- **Project-Level Config**: Automatically detects `hop.json` in your current directory.
+- **TUI Dashboard**: Interactive terminal dashboard to monitor requests and responses in real-time.
 
 ## Installation
 
@@ -21,31 +23,63 @@ npm install -g @miaoosi/hop
 
 ## Quick Start
 
-### 1. Add a proxy
+1.  **Add a proxy**:
+    ```bash
+    hop add
+    ```
+    Follow the interactive prompts to configure your proxy. You can enable HTTPS, add path rewrites, and custom headers.
 
-```bash
-hop add
+2.  **Start the server**:
+    ```bash
+    hop serve
+    ```
+    This will launch the interactive TUI dashboard where you can monitor traffic.
+
+## Commands
+
+- `hop add`: Add a new proxy rule.
+- `hop list`: List all configured proxies.
+- `hop edit`: Edit an existing proxy (modify target, headers, rewrites, etc.).
+- `hop remove`: Remove a proxy.
+- `hop serve [names...]`: Start the proxy server(s). If names are provided, only those proxies will start.
+
+## Configuration
+
+`hop` supports both global and project-level configuration.
+
+1.  **Project Config** (Recommended for teams): Create a `hop.json` in your project root. `hop` will prioritize this file if it exists.
+2.  **Global Config**: Stored in `~/.hop/config.json`.
+
+### Configuration Format (`hop.json`)
+
+```json
+{
+  "proxies": [
+    {
+      "name": "api-server",
+      "port": 8080,
+      "target": "http://localhost:3000",
+      "https": true,
+      "pathRewrite": {
+        "^/api": ""
+      },
+      "headers": {
+        "Authorization": "Bearer token"
+      }
+    }
+  ]
+}
 ```
 
-Follow the interactive prompts to configure your proxy:
+## TUI Dashboard
 
-```bash
-? Proxy name: api-proxy
-? Enter local port: 3000
-? Enter target URL: https://api.example.com
-? Paths to proxy (comma-separated, leave empty for all): /api/users, /api/posts
-? Add custom headers? Yes
-? Header name: Authorization
-? Header value: Bearer your-api-token
-? Add another header? No
-✔ Proxy added: api-proxy (3000 → https://api.example.com)
-```
+When you run `hop serve`, the terminal will switch to an interactive dashboard:
 
-### 2. List proxies
-
-```bash
-hop list
-```
+- **Left Panel**: Real-time list of requests. Use `↑`/`↓` to navigate.
+- **Right Panel**: Detailed view of the selected request (Headers, Body).
+- **Keys**:
+    - `Enter`: View details.
+    - `q` / `Ctrl+C`: Exit.
 
 Output:
 

@@ -58,4 +58,20 @@ program
   .description('Display detailed help information')
   .action(helpCommand);
 
+program
+  .command('export [name]')
+  .description('Export proxy configuration')
+  .action(async (name) => {
+    const { exportCommand } = await import('./commands/export');
+    await exportCommand(name);
+  });
+
+program
+  .command('import <input>')
+  .description('Import proxy configuration (file path or base64 string)')
+  .action(async (input) => {
+    const { importCommand } = await import('./commands/import');
+    await importCommand(input);
+  });
+
 program.parse();
