@@ -64,6 +64,12 @@ export async function addCommand(): Promise<void> {
         name: 'https',
         message: 'Enable HTTPS?',
         default: false
+      },
+      {
+        type: 'input',
+        name: 'plugins',
+        message: 'Plugins (comma-separated paths, optional):',
+        default: ''
       }
     ]);
 
@@ -165,7 +171,8 @@ export async function addCommand(): Promise<void> {
       })(),
       pathRewrite: Object.keys(pathRewrites).length > 0 ? pathRewrites : undefined,
       headers: Object.keys(headers).length > 0 ? headers : undefined,
-      https: answers.https
+      https: answers.https,
+      plugins: answers.plugins ? answers.plugins.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0) : undefined
     };
 
     await addProxy(proxy);

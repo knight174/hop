@@ -39,6 +39,7 @@ export async function editCommand(): Promise<void> {
       { name: 'Path Rewrites', value: 'pathRewrite' },
       { name: 'Headers', value: 'headers' },
       { name: 'HTTPS', value: 'https' },
+      { name: 'Plugins', value: 'plugins' },
       { name: 'Edit all', value: 'all' }
     ];
 
@@ -58,7 +59,7 @@ export async function editCommand(): Promise<void> {
     ]);
 
     const fieldsToEdit = whatToEdit.fields.includes('all')
-      ? ['name', 'port', 'target', 'paths', 'pathRewrite', 'headers', 'https']
+      ? ['name', 'port', 'target', 'paths', 'pathRewrite', 'headers', 'https', 'plugins']
       : whatToEdit.fields;
 
     const updates: Partial<ProxyRule> = {};
@@ -289,6 +290,19 @@ export async function editCommand(): Promise<void> {
         }
       ]);
       updates.https = answer.https;
+    }
+
+    // Edit Plugins
+    if (fieldsToEdit.includes('plugins')) {
+      const answer = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'plugins',
+          message: 'Plugins (comma-separated paths, optional):',
+          default: proxy.plugins ? proxy.plugins.join(',') : ''
+        }
+      ]);
+      updates.plugins = answer.plugins ? answer.plugins.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0) : undefined;
     }
 
     // Edit headers

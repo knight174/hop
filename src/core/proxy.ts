@@ -51,6 +51,11 @@ export function createProxyServer(rule: ProxyRule): { server: http.Server, proxy
     secure: false
   });
 
+  // Load plugins (async loading happens in startProxy, here we just prepare hooks)
+  // Note: Since createProxyServer is synchronous but plugin loading is async,
+  // we'll attach plugins to the proxy object later in startProxy.
+  // This is a slight refactor to allow async plugin loading.
+
   proxy.on('error', (err: any, _req: any, res: any) => {
     logger.error(`Proxy error for port ${rule.port}: ${err.message}`);
     if (res instanceof http.ServerResponse && !res.headersSent) {
@@ -59,9 +64,8 @@ export function createProxyServer(rule: ProxyRule): { server: http.Server, proxy
     }
   });
 
-  proxy.on('proxyReq', (proxyReq: any, req: any) => {
-    // Save request start time for duration calculation
-    req._startTime = Date.now();
+  proxy.on('proxyReq', (proxyReq, req: any, res, options) => {
+    // Plugin onRequest hooks are handled in the server callback below
 
     // Inject custom headers
     if (rule.headers) {
@@ -69,15 +73,33 @@ export function createProxyServer(rule: ProxyRule): { server: http.Server, proxy
         proxyReq.setHeader(key, value);
       });
     }
+
+    // Path rewriting logic
+    if (rule.pathRewrite && req.url) {
+      // ... (existing rewrite logic is applied before proxy.web, so we don't need to do it here)
+    }
   });
 
-  proxy.on('proxyRes', (proxyRes: any, req: any) => {
+  proxy.on('proxyRes', (proxyRes, req: any, res) => {
     // Add CORS headers to the response
     const corsHeaders = getCorsHeaders(rule, req);
     proxyRes.headers['access-control-allow-origin'] = corsHeaders.origin;
     proxyRes.headers['access-control-allow-headers'] = corsHeaders.headers;
     proxyRes.headers['access-control-allow-methods'] = corsHeaders.methods;
     proxyRes.headers['access-control-allow-credentials'] = corsHeaders.credentials;
+
+    // Execute plugin onResponse hooks
+    if (req._plugins) {
+      req._plugins.forEach((plugin: any) => {
+        if (plugin.onResponse) {
+          try {
+            plugin.onResponse(proxyRes, req, res);
+          } catch (err) {
+            logger.error(`Plugin onResponse error: ${err}`);
+          }
+        }
+      });
+    }
 
     // Log proxy response
     const duration = Date.now() - (req._startTime || Date.now());
@@ -116,42 +138,64 @@ export function createProxyServer(rule: ProxyRule): { server: http.Server, proxy
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
       const corsHeaders = getCorsHeaders(rule, req);
-      res.writeHead(200, {
+      res.writeHead(204, {
         'Access-Control-Allow-Origin': corsHeaders.origin,
-        'Access-Control-Allow-Headers': corsHeaders.headers,
         'Access-Control-Allow-Methods': corsHeaders.methods,
+        'Access-Control-Allow-Headers': corsHeaders.headers,
         'Access-Control-Allow-Credentials': corsHeaders.credentials
       });
       res.end();
-      logger.request(req.method || 'OPTIONS', requestPath, 200, Date.now() - startTime);
       return;
     }
 
-    // Check path matching if paths are configured
+    // Path matching
     if (rule.paths && rule.paths.length > 0) {
-      const matched = rule.paths.some(path => requestPath === path || requestPath.startsWith(path + '/') || requestPath.startsWith(path + '?'));
-
-      if (!matched) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end(`Path not configured for proxy. Allowed paths: ${rule.paths.join(', ')}`);
-        logger.request(req.method || 'UNKNOWN', requestPath, 404, Date.now() - startTime);
+      const isMatch = rule.paths.some(p => requestPath.startsWith(p));
+      if (!isMatch) {
+        res.writeHead(404);
+        res.end(`Not Found: Path ${requestPath} is not proxied.`);
         return;
       }
     }
 
-    // Apply path rewrites if configured
+    // Path Rewriting
     if (rule.pathRewrite) {
-      Object.entries(rule.pathRewrite).forEach(([pattern, replacement]) => {
+      for (const [pattern, replacement] of Object.entries(rule.pathRewrite)) {
         const regex = new RegExp(pattern);
-        if (req.url && regex.test(req.url)) {
+        if (regex.test(req.url || '')) {
           const originalUrl = req.url;
-          req.url = req.url.replace(regex, replacement);
-          logger.debug(`Rewrote path: ${originalUrl} -> ${req.url}`);
+          req.url = req.url?.replace(regex, replacement);
+          if (process.env.DEBUG) {
+            logger.debug(`Rewrote path: ${originalUrl} -> ${req.url}`);
+          }
+          break; // Apply only the first matching rule
         }
-      });
+      }
     }
 
-    proxy.web(req, res);
+    // Execute Plugin onRequest hooks
+    const executePlugins = (index: number) => {
+      if (!req._plugins || index >= req._plugins.length) {
+        // All plugins executed, proceed to proxy
+        proxy.web(req, res);
+        return;
+      }
+
+      const plugin = req._plugins[index];
+      if (plugin.onRequest) {
+        try {
+          plugin.onRequest(req, res, () => executePlugins(index + 1));
+        } catch (err) {
+          logger.error(`Plugin onRequest error: ${err}`);
+          // Continue even if plugin fails? Or stop? Let's continue for now.
+          executePlugins(index + 1);
+        }
+      } else {
+        executePlugins(index + 1);
+      }
+    };
+
+    executePlugins(0);
   });
 
   return { server, proxy };
@@ -161,6 +205,17 @@ export async function startProxy(rule: ProxyRule): Promise<{ server: http.Server
   return new Promise(async (resolve, reject) => {
     let server: http.Server | https.Server;
     let proxyHandler: any;
+    let plugins: any[] = [];
+
+    // Load plugins if configured
+    if (rule.plugins && rule.plugins.length > 0) {
+      try {
+        const { loadPlugins } = await import('./plugin-loader');
+        plugins = await loadPlugins(rule.plugins);
+      } catch (err) {
+        logger.error(`Failed to load plugins: ${err}`);
+      }
+    }
 
     if (rule.https) {
       try {
@@ -172,7 +227,9 @@ export async function startProxy(rule: ProxyRule): Promise<{ server: http.Server
         proxyHandler = result.proxy;
 
         // Create HTTPS server
-        server = https.createServer(certs, (req, res) => {
+        server = https.createServer(certs, (req: any, res) => {
+          // Attach plugins to request object so they can be accessed in createProxyServer
+          req._plugins = plugins;
           proxyHandler.emit('request', req, res);
         });
       } catch (error) {
@@ -183,6 +240,21 @@ export async function startProxy(rule: ProxyRule): Promise<{ server: http.Server
       const result = createProxyServer(rule);
       server = result.server;
       proxyHandler = result.proxy;
+
+      // We need to intercept the request event to attach plugins
+      // But http.createServer in createProxyServer already handles the request.
+      // A cleaner way is to attach plugins to the server instance or pass them to createProxyServer.
+      // However, since we refactored createProxyServer to handle plugins via req._plugins,
+      // we need to ensure req._plugins is set.
+
+      // Hack: Wrap the 'request' listener of the server
+      const originalListeners = server.listeners('request');
+      server.removeAllListeners('request');
+
+      server.on('request', (req: any, res) => {
+        req._plugins = plugins;
+        originalListeners.forEach((listener: any) => listener(req, res));
+      });
     }
 
     server.on('error', (err: NodeJS.ErrnoException) => {

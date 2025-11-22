@@ -14,6 +14,12 @@ export interface ProxyRule {
   headers?: Record<string, string>;
   cors?: CorsConfig;
   https?: boolean;
+  plugins?: string[];
+}
+
+export interface HopPlugin {
+  onRequest?: (req: any, res: any, next: () => void) => void;
+  onResponse?: (proxyRes: any, req: any, res: any) => void;
 }
 
 export interface HopConfig {
