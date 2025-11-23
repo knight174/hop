@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/knight174/hop/compare/v0.1.6...v0.2.0) (2025-11-23)
+
+
+### Features
+
+* Add a Text User Interface (TUI) for managing proxy configurations. ([9df9576](https://github.com/knight174/hop/commit/9df9576a735643c6089091755b154d4086358fd8))
+
 ### [0.1.6](https://github.com/knight174/hop/compare/v0.1.5...v0.1.6) (2025-11-22)
 
 
