@@ -43,7 +43,7 @@ export class Dashboard {
       label: 'Requests',
       width: '50%',
       height: '100%',
-      border: { type: 'line', fg: 'cyan' },
+      border: { type: 'line' },
       columnSpacing: 2,
       columnWidth: [8, 50, 8, 10] // Method, Path, Status, Duration
     });
@@ -52,7 +52,7 @@ export class Dashboard {
     this.detailsBox = this.grid.set(0, 6, 7, 6, blessed.box, {
       label: 'Details',
       content: 'Select a request to view details',
-      border: { type: 'line', fg: 'cyan' },
+      border: { type: 'line' },
       scrollable: true,
       alwaysScroll: true,
       scrollbar: {
@@ -67,7 +67,7 @@ export class Dashboard {
     // Right Panel: Logs (Bottom half)
     this.logBox = this.grid.set(7, 6, 4, 6, blessed.log, {
       label: 'System Logs',
-      border: { type: 'line', fg: 'cyan' },
+      border: { type: 'line' },
       scrollable: true,
       alwaysScroll: true,
       scrollbar: {
@@ -82,7 +82,8 @@ export class Dashboard {
     // Footer: Help
     this.footer = this.grid.set(11, 0, 1, 12, blessed.box, {
       content: ' Keys: ↑/↓: Navigate | Enter: View Details | Tab: Switch Panel | f: Auto-Scroll (On) | q/Ctrl+C: Exit',
-      style: { fg: 'white' }
+      style: { fg: 'white', bg: 'blue' },
+      border: false
     });
 
     this.setupEvents();
@@ -90,8 +91,8 @@ export class Dashboard {
   }
 
   private setupEvents(): void {
-    // Quit on Escape, q, or Control-C.
-    this.screen.key(['escape', 'q', 'C-c'], () => {
+    // Quit on q or Control-C.
+    this.screen.key(['q', 'C-c'], () => {
       return process.exit(0);
     });
 
@@ -135,7 +136,7 @@ export class Dashboard {
         } else {
           // Reset inactive panel border
           if ((el as any).style && (el as any).style.border) {
-            (el as any).style.border.fg = 'cyan';
+            (el as any).style.border.fg = 'white';
           }
         }
       });

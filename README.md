@@ -25,25 +25,45 @@ npm install -g @miaoosi/hop
 
 ## Quick Start
 
+### Option 1: Using the TUI (Recommended)
+
+1.  **Launch the management interface**:
+    ```bash
+    hop
+    ```
+
+2.  **Add a proxy**:
+    - Press `a` to add a new proxy
+    - Your default editor will open with the config file
+    - Add your proxy configuration (see examples below)
+    - Save and exit
+
+3.  **Start/Stop proxies**:
+    - Press `s` to toggle the selected proxy
+    - Or press `Enter` to view details, then `s` to start/stop
+
+### Option 2: Using CLI Commands
+
 1.  **Add a proxy**:
     ```bash
     hop add
     ```
-    Follow the interactive prompts to configure your proxy. You can enable HTTPS, add path rewrites, custom headers, and plugins.
+    Follow the interactive prompts to configure your proxy.
 
 2.  **Start the server**:
     ```bash
     hop serve
     ```
-    This will launch the interactive TUI dashboard where you can monitor traffic.
+    This will launch the interactive dashboard where you can monitor traffic.
 
 ## Commands
 
+- `hop`: Launch the interactive TUI management interface (recommended).
 - `hop add`: Add a new proxy rule.
 - `hop list`: List all configured proxies.
 - `hop edit`: Edit an existing proxy (modify target, headers, rewrites, plugins, etc.).
 - `hop remove`: Remove a proxy.
-- `hop serve [names...]`: Start the proxy server(s).
+- `hop serve [names...]`: Start the proxy server(s) with request monitoring dashboard.
 - `hop export [name]`: Export configuration (Base64).
 - `hop import <input>`: Import configuration from Base64 string or file.
 
@@ -64,6 +84,7 @@ npm install -g @miaoosi/hop
       "port": 8080,
       "target": "http://localhost:3000",
       "https": true,
+      "paths": ["/api", "/auth"], // [] means all paths
       "pathRewrite": {
         "^/api": ""
       },
@@ -102,15 +123,56 @@ module.exports = {
 - Via CLI: Select "Plugins" when adding/editing.
 - Via Config: Add `"plugins": ["./logger.js"]` to your `hop.json`.
 
-## TUI Dashboard
+## TUI Interface
 
-When you run `hop serve`, the terminal will switch to an interactive dashboard:
+`hop` provides two interactive terminal interfaces:
 
-- **Left Panel**: Real-time list of requests. Use `↑`/`↓` to navigate.
-- **Right Panel**: Detailed view of the selected request (Headers, Body).
+### 1. Management TUI (Default)
+
+Run `hop` without arguments to launch the interactive management interface:
+
+```bash
+hop
+```
+
+**Features:**
+- **Proxy List**: View all configured proxies with their status (Running/Stopped)
+- **Quick Actions**:
+  - `↑`/`↓`: Navigate through proxies
+  - `Enter`: View proxy details
+  - `a`: Add new proxy (opens config in editor)
+  - `d`: Delete proxy (with confirmation)
+  - `s`: Start/Stop selected proxy
+  - `q` / `Ctrl+C`: Exit
+
+**Proxy Details View:**
+- View complete proxy configuration
+- `e`: Edit proxy (opens config in editor)
+- `s`: Start/Stop proxy
+  - `Esc` / `Backspace`: Back to list
+
+**Configuration Editing:**
+When you press `a` (add) or `e` (edit), `hop` opens your default editor (`$EDITOR` or `vim`) with the configuration file. Simply edit the JSON and save to apply changes.
+
+### 2. Dashboard (Request Monitor)
+
+When you run `hop serve`, the terminal switches to a real-time request monitoring dashboard:
+
+```bash
+hop serve
+```
+
+**Features:**
+- **Left Panel**: Real-time list of requests with method, path, status, and duration
+- **Right Panel (Top)**: Detailed view of selected request (headers, body)
+- **Right Panel (Bottom)**: System logs
 - **Keys**:
-    - `Enter`: View details.
-    - `q` / `Ctrl+C`: Exit.
+  - `↑`/`↓`: Navigate requests
+  - `Enter`: View request details
+  - `Tab`: Switch between panels
+  - `f`: Toggle auto-scroll
+  - `q` / `Ctrl+C`: Exit
+
 
 Output:
 

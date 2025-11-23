@@ -18,7 +18,12 @@ program
   .name('hop')
   .description('Smart proxying made simple.')
   .version(packageJson.version)
-  .helpOption('-h, --help', 'Display help for command');
+  .helpOption('-h, --help', 'Display help for command')
+  .action(async () => {
+    const { App } = await import('./tui/App');
+    const app = new App();
+    app.start();
+  });
 
 program
   .command('add')

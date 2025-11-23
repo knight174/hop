@@ -3,6 +3,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { HopConfig, ProxyRule } from '../types';
 
+export { ProxyRule, HopConfig };
+
 const CONFIG_DIR = path.join(os.homedir(), '.hop');
 const GLOBAL_CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
@@ -103,3 +105,30 @@ export async function getProxy(nameOrPort: string | number): Promise<ProxyRule |
 }
 
 
+export async function updateProxy(oldName: string, newProxy: ProxyRule): Promise<void> {
+  const config = await loadConfig();
+  const index = config.proxies.findIndex(p => p.name === oldName);
+
+  if (index === -1) {
+    throw new Error(`Proxy "${oldName}" not found`);
+  }
+
+  // Check for name collision if name changed
+  if (oldName !== newProxy.name) {
+    const existingByName = config.proxies.findIndex(p => p.name === newProxy.name);
+    if (existingByName !== -1) {
+      throw new Error(`Proxy name "${newProxy.name}" is already configured`);
+    }
+  }
+
+  // Check for port collision if port changed
+  if (config.proxies[index].port !== newProxy.port) {
+    const existingByPort = config.proxies.findIndex(p => p.port === newProxy.port);
+    if (existingByPort !== -1) {
+      throw new Error(`Port ${newProxy.port} is already configured`);
+    }
+  }
+
+  config.proxies[index] = newProxy;
+  await saveConfig(config);
+}
