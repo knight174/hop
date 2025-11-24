@@ -18,12 +18,7 @@ program
   .name('hop')
   .description('Smart proxying made simple.')
   .version(packageJson.version)
-  .helpOption('-h, --help', 'Display help for command')
-  .action(async () => {
-    const { App } = await import('./tui/App');
-    const app = new App();
-    app.start();
-  });
+  .helpOption('-h, --help', 'Display help for command');
 
 program
   .command('add')
@@ -33,8 +28,17 @@ program
 
 program
   .command('list')
-  .alias('ls')
-  .description('List all configured proxies')
+  .description('Open proxy management interface (TUI)')
+  .helpOption('-h, --help', 'Display help for this command')
+  .action(async () => {
+    const { App } = await import('./tui/App');
+    const app = new App();
+    app.start();
+  });
+
+program
+  .command('ls')
+  .description('List all configured proxies (text output)')
   .helpOption('-h, --help', 'Display help for this command')
   .action(listCommand);
 

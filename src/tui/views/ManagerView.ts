@@ -17,6 +17,7 @@ export class ManagerView {
   // State
   private currentView: 'list' | 'details' = 'list';
   private selectedProxyIndex: number = -1;
+  private refreshTimer: NodeJS.Timeout | null = null;
 
   constructor(screen: blessed.Widgets.Screen, proxyManager: ProxyManager) {
     this.screen = screen;
@@ -28,7 +29,8 @@ export class ManagerView {
         this.proxyManager,
         (index) => this.showDetails(index),
         () => this.showAddProxyForm(),
-        (index) => this.deleteProxy(index)
+        (index) => this.deleteProxy(index),
+        (index) => this.toggleProxy(index)
     );
 
     this.detailsView = new ProxyDetailsView(
@@ -36,14 +38,21 @@ export class ManagerView {
         this.proxyManager,
         () => this.showList(),
         () => this.showEditProxyForm(),
-        () => this.toggleProxy()
+        () => this.toggleProxy(this.selectedProxyIndex)
     );
 
     // Initial Load
     this.init();
+
+    // Start auto-refresh timer (every 5 seconds)
+    this.startRefreshTimer();
+
+    // Subscribe to events
+    this.proxyManager.on('start', () => this.refreshCurrentView());
+    this.proxyManager.on('stop', () => this.refreshCurrentView());
   }
 
-  private async init() {
+  public async init() {
     const config = await loadConfig();
     this.proxies = config.proxies;
     this.listView.update(this.proxies);
@@ -53,6 +62,28 @@ export class ManagerView {
         this.showList();
     } else if (this.currentView === 'details' && this.selectedProxyIndex >= 0) {
         this.showDetails(this.selectedProxyIndex);
+    }
+  }
+
+  private startRefreshTimer() {
+    this.refreshTimer = setInterval(() => {
+      this.refreshCurrentView();
+    }, 5000); // Refresh every 5 seconds for external changes
+  }
+
+  private refreshCurrentView() {
+    // Refresh the current view to update status
+    if (this.currentView === 'list') {
+      this.listView.update(this.proxies);
+    } else if (this.currentView === 'details' && this.selectedProxyIndex >= 0) {
+      this.detailsView.render();
+    }
+  }
+
+  private stopRefreshTimer() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
     }
   }
 
@@ -74,22 +105,26 @@ export class ManagerView {
     this.detailsView.show();
   }
 
-  private async toggleProxy() {
-    if (this.selectedProxyIndex < 0) return;
-    const proxy = this.proxies[this.selectedProxyIndex];
+  private async toggleProxy(index: number) {
+    if (index < 0 || index >= this.proxies.length) return;
+    const proxy = this.proxies[index];
 
     if (this.proxyManager.isRunning(proxy.name)) {
       this.proxyManager.stop(proxy.name);
     } else {
       try {
         await this.proxyManager.start(proxy);
-      } catch (error) {
-        // TODO: Show error
+      } catch (error: any) {
+        this.showError('Start Failed', error.message || String(error));
       }
     }
 
     // Refresh current view
-    this.detailsView.render();
+    if (this.currentView === 'details') {
+      this.detailsView.render();
+    } else {
+      this.listView.update(this.proxies);
+    }
   }
 
   private async deleteProxy(index: number) {
@@ -111,8 +146,8 @@ export class ManagerView {
         try {
           await removeProxy(proxy.name);
           await this.init(); // Reloads config and updates list
-        } catch (error) {
-          // TODO: Show error
+        } catch (error: any) {
+          this.showError('Delete Failed', error.message || String(error));
         }
       },
       () => {
@@ -123,37 +158,52 @@ export class ManagerView {
   }
 
   private async showAddProxyForm() {
-    try {
-      const { openConfigInEditor } = await import('../utils/editor');
-      await openConfigInEditor(this.screen);
-      // Reload config after editing
-      await this.init();
+    await this.handleConfigEdit(() => {
       this.showList();
-    } catch (error) {
-      // TODO: Show error message
-      this.showList();
-    }
+    });
   }
 
   private async showEditProxyForm() {
-    try {
-      const { openConfigInEditor } = await import('../utils/editor');
-      await openConfigInEditor(this.screen);
-      // Reload config after editing
-      await this.init();
+    await this.handleConfigEdit(() => {
       // Try to return to details view if proxy still exists
       if (this.selectedProxyIndex >= 0 && this.selectedProxyIndex < this.proxies.length) {
         this.showDetails(this.selectedProxyIndex);
       } else {
         this.showList();
       }
-    } catch (error) {
-      // TODO: Show error message
-      if (this.selectedProxyIndex >= 0) {
-        this.showDetails(this.selectedProxyIndex);
-      } else {
-        this.showList();
-      }
+    });
+  }
+
+  private async handleConfigEdit(onSuccess: () => void) {
+    try {
+      const { openConfigInEditor } = await import('../utils/editor');
+      await openConfigInEditor(this.screen);
+      // Reload config after editing
+      await this.init();
+      onSuccess();
+    } catch (error: any) {
+      this.showError('Editor Error', error.message || String(error));
+      // Always return to list on error to be safe
+      this.showList();
     }
+  }
+
+  private async showError(title: string, message: string) {
+    const { showMessageDialog } = await import('../components/MessageDialog');
+    showMessageDialog(this.screen, title, message, () => {
+      // Ensure we focus back on something appropriate
+      if (this.currentView === 'list') {
+        this.listView.show();
+      } else {
+        this.detailsView.show();
+      }
+    });
+  }
+  public destroy() {
+    this.stopRefreshTimer();
+    this.proxyManager.removeAllListeners('start');
+    this.proxyManager.removeAllListeners('stop');
+    this.listView.destroy();
+    this.detailsView.destroy();
   }
 }

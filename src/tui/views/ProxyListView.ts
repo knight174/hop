@@ -1,6 +1,7 @@
 import blessed from 'blessed';
 import { ProxyRule } from '../../core/config';
 import { ProxyManager } from '../../core/ProxyManager';
+import { formatProxyStatus } from '../utils/formatting';
 
 export class ProxyListView {
   private screen: blessed.Widgets.Screen;
@@ -10,6 +11,7 @@ export class ProxyListView {
   private onSelect: (index: number) => void;
   private onAdd: () => void;
   private onDelete: (index: number) => void;
+  private onToggle: (index: number) => void;
   private footer: blessed.Widgets.BoxElement;
 
   constructor(
@@ -17,13 +19,15 @@ export class ProxyListView {
     proxyManager: ProxyManager,
     onSelect: (index: number) => void,
     onAdd: () => void,
-    onDelete: (index: number) => void
+    onDelete: (index: number) => void,
+    onToggle: (index: number) => void
   ) {
     this.screen = screen;
     this.proxyManager = proxyManager;
     this.onSelect = onSelect;
     this.onAdd = onAdd;
     this.onDelete = onDelete;
+    this.onToggle = onToggle;
 
     this.list = blessed.list({
       parent: this.screen,
@@ -49,7 +53,7 @@ export class ProxyListView {
       left: 0,
       width: '100%',
       height: 1,
-      content: ' Keys: ↑/↓: Navigate | Enter: Details | a: Add | d: Delete | s: Start/Stop | q: Quit',
+      content: ' Keys: ↑/↓: Navigate | Enter: Details | e: Edit | a: Add | d: Delete | s: Start/Stop | q: Quit',
       style: {
         fg: 'white',
         bg: 'blue'
@@ -65,6 +69,25 @@ export class ProxyListView {
         if (!this.list.hidden) this.onAdd();
     });
 
+    this.list.key(['e'], () => {
+        if (!this.list.hidden) {
+            const index = (this.list as any).selected;
+            if (index >= 0 && index < this.proxies.length) {
+                // Trigger edit directly
+                const { openConfigInEditor } = require('../utils/editor');
+                openConfigInEditor(this.screen).then(() => {
+                    // Reload config after editing
+                    const { loadConfig } = require('../../core/config');
+                    loadConfig().then((config: any) => {
+                        this.update(config.proxies);
+                    });
+                }).catch(() => {
+                    // Error handling - just refresh
+                });
+            }
+        }
+    });
+
     this.list.key(['d'], () => {
         if (!this.list.hidden) {
             const index = (this.list as any).selected;
@@ -74,21 +97,11 @@ export class ProxyListView {
         }
     });
 
-    this.list.key(['s'], async () => {
+    this.list.key(['s'], () => {
         if (!this.list.hidden) {
             const index = (this.list as any).selected;
             if (index >= 0 && index < this.proxies.length) {
-                const proxy = this.proxies[index];
-                if (this.proxyManager.isRunning(proxy.name)) {
-                    this.proxyManager.stop(proxy.name);
-                } else {
-                    try {
-                        await this.proxyManager.start(proxy);
-                    } catch (err) {
-                        // TODO: Show error
-                    }
-                }
-                this.update(this.proxies); // Refresh list to show new status
+                this.onToggle(index);
             }
         }
     });
@@ -96,14 +109,25 @@ export class ProxyListView {
 
   public update(proxies: ProxyRule[]) {
     this.proxies = proxies;
+
+    if (proxies.length === 0) {
+      this.list.setItems(['No proxies configured. Press "a" to add one.']);
+      this.screen.render();
+      return;
+    }
+
+    // Calculate max widths
+    const maxNameLen = Math.max(4, ...proxies.map(p => p.name.length));
+    const maxPortLen = Math.max(4, ...proxies.map(p => String(p.port).length));
+    const maxTargetLen = Math.max(6, ...proxies.map(p => p.target.length));
+
     const items = proxies.map(p => {
-        const isRunning = this.proxyManager.isRunning(p.name);
-        const status = isRunning ? '{green-fg}Running{/}' : '{red-fg}Stopped{/}';
-        // Simple column alignment
-        const name = p.name.padEnd(20);
-        const port = String(p.port).padEnd(8);
-        const target = p.target.padEnd(30);
-        return `${name} ${port} ${target} ${status}`;
+        const status = formatProxyStatus(p, this.proxyManager);
+
+        const name = p.name.padEnd(maxNameLen + 4);
+        const port = String(p.port).padEnd(maxPortLen + 4);
+        const target = p.target.padEnd(maxTargetLen + 4);
+        return `${name}${port}${target}${status}`;
     });
     this.list.setItems(items);
     this.screen.render();
@@ -123,5 +147,10 @@ export class ProxyListView {
 
   public isVisible(): boolean {
       return !this.list.hidden;
+  }
+
+  public destroy() {
+    this.list.destroy();
+    this.footer.destroy();
   }
 }

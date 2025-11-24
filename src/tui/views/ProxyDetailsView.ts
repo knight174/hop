@@ -1,6 +1,7 @@
 import blessed from 'blessed';
 import { ProxyRule } from '../../core/config';
 import { ProxyManager } from '../../core/ProxyManager';
+import { getStatusColor } from '../utils/formatting';
 
 export class ProxyDetailsView {
   private screen: blessed.Widgets.Screen;
@@ -49,7 +50,7 @@ export class ProxyDetailsView {
       width: '100%',
       height: 1,
       hidden: true,
-      content: ' Keys: e: Edit (Config) | s: Start/Stop | Esc/Backspace: Back',
+      content: ' Keys: e: Edit | s: Start/Stop | Esc: Back',
       style: {
         fg: 'white',
         bg: 'blue'
@@ -57,19 +58,16 @@ export class ProxyDetailsView {
     });
 
     // Keybindings
-    // We bind to the screen but check visibility, or we can bind to the box if we focus it.
-    // Binding to box is safer for "local" keys.
-
     this.box.key(['escape', 'backspace'], () => {
-        this.onBack();
+      this.onBack();
     });
 
     this.box.key(['e'], () => {
-        this.onEdit();
+      this.onEdit();
     });
 
     this.box.key(['s'], () => {
-        this.onToggle();
+      this.onToggle();
     });
   }
 
@@ -82,8 +80,14 @@ export class ProxyDetailsView {
     if (!this.proxy) return;
 
     const isRunning = this.proxyManager.isRunning(this.proxy.name);
-    const statusColor = isRunning ? '{green-fg}' : '{red-fg}';
-    const statusText = isRunning ? 'Running' : 'Stopped';
+    const isLocal = this.proxyManager.isRunningLocally(this.proxy.name);
+
+    let statusColor = getStatusColor(this.proxy, this.proxyManager);
+    let statusText = 'Stopped';
+
+    if (isRunning) {
+      statusText = isLocal ? 'Running' : 'Running (External)';
+    }
 
     const content = `
 {bold}Name:{/bold} ${this.proxy.name}
@@ -116,6 +120,11 @@ ${this.proxy.headers ? JSON.stringify(this.proxy.headers, null, 2) : '  (None)'}
   }
 
   public isVisible(): boolean {
-      return !this.box.hidden;
+    return !this.box.hidden;
+  }
+
+  public destroy() {
+    this.box.destroy();
+    this.footer.destroy();
   }
 }

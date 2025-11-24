@@ -4,6 +4,7 @@ import { loadConfig } from '../core/config';
 import { startProxy } from '../core/proxy';
 import { logger } from '../core/logger';
 import { ProxyRule } from '../types';
+import { registry } from '../core/registry';
 import chalk from 'chalk';
 
 interface ServerInfo {
@@ -49,12 +50,25 @@ export async function serveCommand(proxyNames: string[] = []): Promise<void> {
 
     const servers: ServerInfo[] = [];
     for (const proxy of proxiesToStart) {
+      // Check if already running (via registry)
+      if (registry.isRunning(proxy.name)) {
+        const entry = registry.getEntry(proxy.name);
+        if (entry && entry.pid !== process.pid) {
+          spinner.fail();
+          logger.error(`Proxy ${proxy.name} is already running in another process (PID: ${entry.pid})`);
+          process.exit(1);
+        }
+      }
+
       try {
         const { server, proxy: proxyHandler } = await startProxy(proxy);
         servers.push({ proxy, server });
 
         // Store proxy handler for dashboard
         (server as any)._proxyHandler = proxyHandler;
+
+        // Register in registry
+        registry.register(proxy.name, process.pid, proxy.port);
       } catch (error) {
         spinner.fail();
         if (error instanceof Error) {
@@ -118,15 +132,17 @@ export async function serveCommand(proxyNames: string[] = []): Promise<void> {
       console.log = originalConsoleLog;
       console.error = originalConsoleLog;
 
-      servers.forEach(({ server }) => {
+      servers.forEach(({ server, proxy }) => {
         server.close();
+        registry.unregister(proxy.name);
       });
       process.exit(0);
     });
 
     process.on('SIGTERM', () => {
-      servers.forEach(({ server }) => {
+      servers.forEach(({ server, proxy }) => {
         server.close();
+        registry.unregister(proxy.name);
       });
       process.exit(0);
     });
