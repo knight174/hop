@@ -1,7 +1,7 @@
 {
   "name": "@miaoosi/hop",
   "version": "0.2.0",
-  "description": "Smart proxying made simple.",
+  "description": "Smart proxying made simple with interactive TUI.",
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,15 +25,23 @@
     "watch": "tsc --watch",
     "prepublishOnly": "npm run build",
     "release": "standard-version",
-    "release:first": "standard-version --first-release"
+    "release:first": "standard-version --first-release",
+    "release:patch": "standard-version --release-as patch",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major"
   },
   "keywords": [
     "proxy",
     "cli",
+    "tui",
+    "terminal-ui",
     "http-proxy",
     "development",
     "port-forwarding",
-    "api-proxy"
+    "api-proxy",
+    "proxy-manager",
+    "request-monitor",
+    "dashboard"
   ],
   "author": "Chaos",
   "license": "MIT",
