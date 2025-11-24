@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/knight174/hop/compare/v0.2.0...v0.3.0) (2025-11-24)
+
+
+### Features
+
+* Introduce TUI auto-refresh and error handling, restructure CLI commands, and add plugin registry. ([bf85da9](https://github.com/knight174/hop/commit/bf85da9cc9507fa61597aa363770e0d276b9f996))
+
 ## [0.2.0](https://github.com/knight174/hop/compare/v0.1.6...v0.2.0) (2025-11-23)
 
 

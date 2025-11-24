@@ -1,6 +1,6 @@
 {
   "name": "@miaoosi/hop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Smart proxying made simple with interactive TUI.",
   "type": "commonjs",
   "main": "dist/index.js",
